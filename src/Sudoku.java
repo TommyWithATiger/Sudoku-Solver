@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.util.Arrays;
 
 public class Sudoku {
 
@@ -48,7 +47,8 @@ public class Sudoku {
         int[] gridOther = toCopy.grid;
         for (int index = 0; index < 81; index++) {
             if (gridOther[index] == 0) {
-                gridSolutions[index] = Arrays.copyOf(toCopy.gridSolutions[index], toCopy.gridSolutions[index].length);
+                gridSolutions[index] = new int[9];
+                System.arraycopy(toCopy.gridSolutions[index], 0, gridSolutions[index], 0, 9);
             } else {
                 grid[index] = gridOther[index];
             }
@@ -143,8 +143,9 @@ public class Sudoku {
             return this;
         }
 
-        while (ArrayUtils.nonZero(gridSolutions[bestIndex]) != 0) {
-            int value = ArrayUtils.getFirstNonZero(gridSolutions[bestIndex]);
+        int value;
+
+        while ((value = ArrayUtils.getFirstNonZero(gridSolutions[bestIndex])) != 0) {
             Sudoku copy = new Sudoku(this);
             copy.setValue(bestIndex, value);
             copy = copy.solve();

@@ -1,48 +1,39 @@
 import java.io.IOException;
+import java.util.Arrays;
 
 public class Sudoku {
 
-    public int[][] grid = new int[9][9];
-    public int[][][] gridSolutions = new int[9][9][];
+    private int[] grid = new int[81];
+    private int[][] gridSolutions = new int[81][];
 
-    public static final int COLUMNS = 9, ROWS = 9;
+    public static final int ROWS = 9, COLUMNS = 9;
 
-    private Sudoku() {}
-
-    private void initiateCells(Sudoku sudoku) {
-        for (int row = 0; row < ROWS; row++) {
-            for (int column = 0; column < COLUMNS; column++) {
-                if (sudoku.grid[row][column] != 0){
-                    grid[row][column] = sudoku.grid[row][column];
-                } else {
-                    gridSolutions[row][column] = ArrayUtils.getCopy(sudoku.gridSolutions[row][column]);
-                }
-            }
-        }
+    private Sudoku() {
     }
 
     public void removeNonValidSolutionsRow(int row, int[] ints) {
-        for (int column = 0; column < COLUMNS; column++) {
-            if (grid[row][column] != 0) {
-                ints[grid[row][column] - 1] = 0;
+        int max = (row + 1) * 9;
+        for (int index = row * 9; index < max; index++) {
+            if (grid[index] != 0) {
+                ints[grid[index] - 1] = 0;
             }
         }
     }
 
     public void removeNonValidSolutionsColumn(int column, int[] ints) {
-        for (int row = 0; row < ROWS; row++) {
-            if (grid[row][column] != 0) {
-                ints[grid[row][column] - 1] = 0;
+        for (int index = column; index < 81; index += 9) {
+            if (grid[index] != 0) {
+                ints[grid[index] - 1] = 0;
             }
         }
     }
 
     public void removeNonValidSolutionsSquare(int row, int column, int[] ints) {
-        int minRow = (row / 3) * 3, minColumn = (column / 3) * 3;
-        for (int currentRow = minRow; currentRow < minRow + 3; currentRow++) {
-            for (int currentColumn = minColumn; currentColumn < minColumn + 3; currentColumn++) {
-                if (grid[currentRow][currentColumn] != 0) {
-                    ints[grid[currentRow][currentColumn] - 1] = 0;
+        int minRow = (row / 3) * 27, minColumn = (column / 3) * 3;
+        for (int rowIndex = minRow; rowIndex < minRow + 27; rowIndex += 9) {
+            for (int index = minColumn + rowIndex; index < minColumn + 3 + rowIndex; index++) {
+                if (grid[index] != 0) {
+                    ints[grid[index] - 1] = 0;
                 }
             }
         }
@@ -54,33 +45,37 @@ public class Sudoku {
     }
 
     private Sudoku(Sudoku toCopy) {
-        initiateCells(toCopy);
+        int[] gridOther = toCopy.grid;
+        for (int index = 0; index < 81; index++) {
+            if (gridOther[index] == 0) {
+                gridSolutions[index] = Arrays.copyOf(toCopy.gridSolutions[index], toCopy.gridSolutions[index].length);
+            } else {
+                grid[index] = gridOther[index];
+            }
+        }
     }
 
     private void updateRow(int row, int value) {
-        int[] curRow = grid[row];
-        int[][] curRowSolutions = gridSolutions[row];
-        for (int column = 0; column < COLUMNS; column++) {
-            if (curRow[column] == 0) {
-                curRowSolutions[column][value] = 0;
+        for (int index = row; index < row + 9; index++) {
+            if (grid[index] == 0) {
+                gridSolutions[index][value] = 0;
             }
         }
     }
 
     private void updateColumn(int column, int value) {
-        for (int row = 0; row < ROWS; row++) {
-            if (grid[row][column] == 0) {
-                gridSolutions[row][column][value] = 0;
+        for (int index = column; index < 81; index += 9) {
+            if (grid[index] == 0) {
+                gridSolutions[index][value] = 0;
             }
         }
     }
 
     private void updateSubgrid(int row, int column, int value) {
-        int minRow = (row / 3) * 3, minColumn = (column / 3) * 3;
-        for (int currentRow = minRow; currentRow < minRow + 3; currentRow++) {
-            for (int currentColumn = minColumn; currentColumn < minColumn + 3; currentColumn++) {
-                if (grid[currentRow][currentColumn] == 0) {
-                    gridSolutions[currentRow][currentColumn][value] = 0;
+        for (int rowIndex = row; rowIndex < row + 27; rowIndex += 9) {
+            for (int index = column + rowIndex; index < column + 3 + rowIndex; index++) {
+                if (grid[index] == 0) {
+                    gridSolutions[index][value] = 0;
                 }
             }
         }
@@ -89,14 +84,9 @@ public class Sudoku {
     public static Sudoku fromString(String data) {
         Sudoku sudoku = new Sudoku();
         if (data.length() > 81) data = data.substring(0, 81);
-        int index = 0;
-        for (int row = 0; row < ROWS; row++) {
-            for (int column = 0; column < COLUMNS; column++) {
-                if (index >= data.length()) break;
-                if (data.charAt(index) > 48 && data.charAt(index) < 58) {
-                    sudoku.grid[row][column] = data.charAt(index) - 48;
-                }
-                index++;
+        for (int index = 0; index < data.length(); index++) {
+            if (data.charAt(index) > 48 && data.charAt(index) < 58) {
+                sudoku.grid[index] = data.charAt(index) - 48;
             }
         }
         sudoku.setUpPossibleSolutions();
@@ -104,9 +94,93 @@ public class Sudoku {
     }
 
     public int getValue(int row, int column) {
-        return grid[row][column];
+        return grid[row * 9 + column];
     }
 
+
+    @Override
+    public String toString() {
+        String output = "┏━┳━┳━┳━┳━┳━┳━┳━┳━┓\n";
+        for (int row = 0; row < ROWS; row++) {
+            output += "┃";
+            for (int column = 0; column < COLUMNS; column++) {
+                if (getValue(row, column) != 0) {
+                    output += getValue(row, column);
+                } else {
+                    output += " ";
+                }
+                output += "┃";
+            }
+            if (row < ROWS - 1) {
+                output += "\n┣━╋━╋━╋━╋━╋━╋━╋━╋━┫\n";
+            } else {
+                output += "\n┗━┻━┻━┻━┻━┻━┻━┻━┻━┛";
+            }
+        }
+        return output;
+    }
+
+    public Sudoku solve() {
+        int bestAmount = 10;
+        int bestIndex = -1;
+        for (int index = 0; index < 81; index++) {
+            if (grid[index] == 0) {
+                int length = ArrayUtils.nonZero(gridSolutions[index]);
+                if (length == 1) {
+                    setValue(index, ArrayUtils.getFirstNonZero(gridSolutions[index]));
+                } else if (length < bestAmount) {
+                    if (length == 0) return null;
+                    bestAmount = length;
+                    bestIndex = index;
+                }
+            }
+        }
+        return goDeeper(bestIndex);
+    }
+
+    private Sudoku goDeeper(int bestIndex){
+        if (bestIndex == -1) {
+            return this;
+        }
+
+        while (ArrayUtils.nonZero(gridSolutions[bestIndex]) != 0) {
+            int value = ArrayUtils.getFirstNonZero(gridSolutions[bestIndex]);
+            Sudoku copy = new Sudoku(this);
+            copy.setValue(bestIndex, value);
+            copy = copy.solve();
+            if (copy == null) {
+                gridSolutions[bestIndex][value - 1] = 0;
+            } else {
+                return copy;
+            }
+        }
+
+        return null;
+    }
+
+    private void setValue(int index, int value) {
+        grid[index] = value--;
+        updateRow((index / 9) * 9, value);
+        updateColumn(index % 9, value);
+        updateSubgrid((index / 27) * 27, ((index % 9) / 3) * 3, value);
+    }
+
+    public void setUpPossibleSolutions() {
+        for (int index = 0; index < 81; index++) {
+            if (grid[index] == 0) {
+                setPossibleSolutions(index);
+            }
+        }
+    }
+
+    private void setPossibleSolutions(int index) {
+        int[] possible = Sudoku.getPossibleValues();
+        removeNonValidSolutionsRow(index / 9, possible);
+        removeNonValidSolutionsColumn(index % 9, possible);
+        removeNonValidSolutionsSquare(index / 9, index % 9, possible);
+
+        gridSolutions[index] = possible;
+    }
 
     public static void main(String[] args) throws IOException {
         Sudoku sudoku = fromString("..............3.85..1.2.......5.7.....4...1...9.......5......73..2.1........4...9");
@@ -129,118 +203,35 @@ public class Sudoku {
         Sudoku sudoku17 = fromString(".......12....35......6...7.7.....3.....4..8..1...........12.....8.....4..5....6..");
         Sudoku sudoku18 = fromString("1.......2.9.4...5...6...7...5.3.4.......6........58.4...2...6...3...9.8.7.......1");
         Sudoku sudoku19 = fromString(".....1.2.3...4.5.....6....7..2.....1.8..9..3.4.....8..5....2....9..3.4....67.....");
-        System.out.println(SudokuValidator.isValid(new Sudoku(sudoku.solve())));
+        System.out.println(SudokuValidator.isValid(new Sudoku(sudoku).solve()));
 
         System.in.read();
         long time = System.nanoTime();
         for (int i = 0; i < 50; i++) {
-            new Sudoku(sudoku.solve());
-            new Sudoku(sudoku1.solve());
-            new Sudoku(sudoku2.solve());
-            new Sudoku(sudoku3.solve());
-            new Sudoku(sudoku4.solve());
-            new Sudoku(sudoku5.solve());
-            new Sudoku(sudoku6.solve());
-            new Sudoku(sudoku7.solve());
-            new Sudoku(sudoku8.solve());
-            new Sudoku(sudoku9.solve());
-            new Sudoku(sudoku10.solve());
-            new Sudoku(sudoku11.solve());
-            new Sudoku(sudoku12.solve());
-            new Sudoku(sudoku13.solve());
-            new Sudoku(sudoku14.solve());
-            new Sudoku(sudoku15.solve());
-            new Sudoku(sudoku16.solve());
-            new Sudoku(sudoku17.solve());
-            new Sudoku(sudoku18.solve());
-            new Sudoku(sudoku19.solve());
+            new Sudoku(sudoku).solve();
+            new Sudoku(sudoku1).solve();
+            new Sudoku(sudoku2).solve();
+            new Sudoku(sudoku3).solve();
+            new Sudoku(sudoku4).solve();
+            new Sudoku(sudoku5).solve();
+            new Sudoku(sudoku6).solve();
+            new Sudoku(sudoku7).solve();
+            new Sudoku(sudoku8).solve();
+            new Sudoku(sudoku9).solve();
+            new Sudoku(sudoku10).solve();
+            new Sudoku(sudoku11).solve();
+            new Sudoku(sudoku12).solve();
+            new Sudoku(sudoku13).solve();
+            new Sudoku(sudoku14).solve();
+            new Sudoku(sudoku15).solve();
+            new Sudoku(sudoku16).solve();
+            new Sudoku(sudoku17).solve();
+            new Sudoku(sudoku18).solve();
+            new Sudoku(sudoku19).solve();
         }
         System.out.println("1x:  " + ((System.nanoTime() - time) / 50) / Math.pow(10, 9));
         System.out.println("50x: " + (System.nanoTime() - time) / Math.pow(10, 9));
     }
 
-    @Override
-    public String toString() {
-        String output = "┏━┳━┳━┳━┳━┳━┳━┳━┳━┓\n";
-        for (int row = 0; row < ROWS; row++) {
-            output += "┃";
-            for (int column = 0; column < COLUMNS; column++) {
-                if (grid[row][column] != 0) {
-                    output += grid[row][column];
-                } else {
-                    output += " ";
-                }
-                output += "┃";
-            }
-            if (row < ROWS - 1) {
-                output += "\n┣━╋━╋━╋━╋━╋━╋━╋━╋━┫\n";
-            } else {
-                output += "\n┗━┻━┻━┻━┻━┻━┻━┻━┻━┛";
-            }
-        }
-        return output;
-    }
-
-    public Sudoku solve() {
-        int bestAmount = 10;
-        int bestRow = -1, bestColumn = -1;
-        for (int row = 0; row < ROWS; row++) {
-            for (int column = 0; column < COLUMNS; column++) {
-                if (grid[row][column] == 0) {
-                    int length = ArrayUtils.nonZero(gridSolutions[row][column]);
-                    if (length == 1) {
-                        setValue(row, column, ArrayUtils.getFirstNonZero(gridSolutions[row][column]));
-                    } else if (length < bestAmount) {
-                        bestAmount = length;
-                        bestRow = row;
-                        bestColumn = column;
-                    }
-                }
-            }
-        }
-
-        if (bestRow == -1) {
-            return this;
-        }
-
-        while (ArrayUtils.nonZero(gridSolutions[bestRow][bestColumn]) != 0){
-            int value = ArrayUtils.getFirstNonZero(gridSolutions[bestRow][bestColumn]);
-            Sudoku copy = new Sudoku(this);
-            copy.setValue(bestRow, bestColumn, value);
-            Sudoku copySolved = copy.solve();
-            if (copySolved != null) {
-                return copySolved;
-            }
-            gridSolutions[bestRow][bestColumn][value - 1] = 0;
-        }
-
-        return null;
-    }
-
-    private void setValue(int row, int column, int value){
-        grid[row][column] = value--;
-        updateRow(row, value);
-        updateColumn(column, value);
-        updateSubgrid(row, column, value);
-    }
-
-    public void setUpPossibleSolutions() {
-        for (int row = 0; row < ROWS; row++) {
-            for (int column = 0; column < COLUMNS; column++) {
-                if (grid[row][column] == 0) {
-                    setPossibleSolutions(row, column);
-                }
-            }
-        }
-    }
-
-    private void setPossibleSolutions(int row, int column){
-        int[] possible = Sudoku.getPossibleValues();
-        removeNonValidSolutionsRow(row, possible);
-        removeNonValidSolutionsColumn(column, possible);
-        removeNonValidSolutionsSquare(row, column, possible);
-
-        gridSolutions[row][column] = possible;
-    }
 
 }

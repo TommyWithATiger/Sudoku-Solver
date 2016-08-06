@@ -223,7 +223,6 @@ public class Sudoku {
             return this;
         }
 
-        best.setPossibleSolutions(this);
         for (int value : best.getPossibleSolutions()) {
             Sudoku copy = new Sudoku(this);
             copy.setValue(best.getRow(), best.getColumn(), value);

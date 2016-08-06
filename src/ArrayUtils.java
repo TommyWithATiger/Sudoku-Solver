@@ -26,15 +26,15 @@ public class ArrayUtils {
         return newInts;
     }
 
-    public static int[] clean(int[] ints){
+    public static int[] clean(int[] ints) {
         int amount = 9;
-        for (int integer : ints){
+        for (int integer : ints) {
             if (integer == 0) amount--;
         }
         return clean(ints, amount);
     }
 
-    public static int[] getCopy(int[] array){
+    public static int[] getCopy(int[] array) {
         int[] ints = new int[array.length];
         System.arraycopy(array, 0, ints, 0, array.length);
         return ints;
